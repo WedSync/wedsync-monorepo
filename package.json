@@ -1,0 +1,63 @@
+{
+  "name": "wedsync-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "type-check": "turbo run type-check",
+    "quality": "npm run lint && npm run format:check && npm run type-check",
+    "sonar:start": "docker-compose -f docker-compose.sonar.yml up -d",
+    "sonar:stop": "docker-compose -f docker-compose.sonar.yml down",
+    "sonar:scan": "sonar-scanner",
+    "sonar:scan:monorepo": "sonar-scanner -Dsonar.projectKey=wedsync-monorepo",
+    "sonar:scan:wedsync": "cd wedsync && sonar-scanner",
+    "sonar:scan:wedme": "cd wedme && sonar-scanner",
+    "sonar:scan:admin": "cd admin && sonar-scanner",
+    "sonar:scan:all": "npm run sonar:scan:monorepo && npm run sonar:scan:wedsync && npm run sonar:scan:wedme && npm run sonar:scan:admin",
+    "sonar:prepare": "npm run lint && npm run type-check && npm run test",
+    "sonar:full-analysis": "npm run sonar:prepare && npm run sonar:scan:all",
+    "sonar:setup": "./scripts/setup-sonar-quality-gates.sh",
+    "sonar:analyze": "./scripts/sonar-analyze.sh analyze",
+    "sonar:full": "./scripts/sonar-analyze.sh full",
+    "supabase:start": "docker-compose -f docker-compose.supabase.yml up -d",
+    "supabase:stop": "docker-compose -f docker-compose.supabase.yml down",
+    "supabase:restart": "npm run supabase:stop && npm run supabase:start",
+    "supabase:logs": "docker-compose -f docker-compose.supabase.yml logs -f",
+    "supabase:db:reset": "docker-compose -f docker-compose.supabase.yml down -v && npm run supabase:start",
+    "task:complete": "node scripts/update-task-completion.js complete",
+    "task:list": "node scripts/update-task-completion.js list",
+    "task:next": "node scripts/update-task-completion.js next",
+    "task:progress": "node scripts/update-task-completion.js progress",
+    "task:reminder": "./scripts/task-reminder.sh"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.7",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "pnpm@8.6.12",
+  "engines": {
+    "node": ">=18"
+  },
+  "workspaces": [
+    "wedsync",
+    "wedme", 
+    "admin",
+    "packages/*"
+  ]
+}

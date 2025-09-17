@@ -1,0 +1,33 @@
+{
+  "name": "@wedsync/database",
+  "version": "0.1.0",
+  "description": "Database schemas and utilities for WedSync platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "supabase"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "db:generate-types": "supabase gen types typescript --local > src/types/database.ts",
+    "db:reset": "supabase db reset",
+    "db:migrate": "supabase migration up",
+    "db:seed": "supabase seed"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "@wedsync/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.0",
+    "supabase": "^1.110.0",
+    "typescript": "^5.1.6"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

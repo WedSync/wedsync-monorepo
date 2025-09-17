@@ -1,0 +1,270 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core semantic colors - Light theme */
+    --background: 210 20% 98%;
+    --foreground: 210 15% 16%;
+    
+    /* Primary brand colors - Romantic rose */
+    --primary: 340 82% 52%;
+    --primary-foreground: 210 20% 98%;
+    --primary-muted: 340 100% 95%;
+    
+    /* Secondary colors - Elegant lavender */
+    --secondary: 270 100% 95%;
+    --secondary-foreground: 270 91% 28%;
+    
+    /* Accent colors - Wedding gold */
+    --accent: 45 100% 90%;
+    --accent-foreground: 45 90% 22%;
+    
+    /* Muted colors */
+    --muted: 210 20% 95%;
+    --muted-foreground: 210 7% 56%;
+    
+    /* Card colors */
+    --card: 210 20% 98%;
+    --card-foreground: 210 15% 16%;
+    
+    /* Popover colors */
+    --popover: 210 20% 98%;
+    --popover-foreground: 210 15% 16%;
+    
+    /* Border colors */
+    --border: 210 16% 93%;
+    --input: 210 16% 93%;
+    --ring: 340 82% 52%;
+    
+    /* State colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+    --success: 138 76% 42%;
+    --success-foreground: 210 20% 98%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 45 90% 22%;
+    
+    /* Chart colors for analytics */
+    --chart-1: 340 82% 52%;
+    --chart-2: 270 91% 65%;
+    --chart-3: 45 90% 60%;
+    --chart-4: 138 76% 42%;
+    --chart-5: 48 96% 53%;
+    
+    /* Border radius */
+    --radius: 0.5rem;
+    
+    /* Wedding-specific gradients */
+    --wedding-gradient: linear-gradient(135deg, hsl(340 82% 52%) 0%, hsl(270 91% 65%) 100%);
+    --romantic-gradient: linear-gradient(45deg, hsl(340 100% 95%) 0%, hsl(270 100% 95%) 50%, hsl(45 100% 95%) 100%);
+  }
+
+  .dark {
+    /* Core semantic colors - Dark theme */
+    --background: 210 24% 10%;
+    --foreground: 210 20% 98%;
+    
+    /* Primary brand colors */
+    --primary: 340 100% 70%;
+    --primary-foreground: 210 24% 10%;
+    --primary-muted: 340 82% 15%;
+    
+    /* Secondary colors */
+    --secondary: 210 10% 23%;
+    --secondary-foreground: 210 20% 98%;
+    
+    /* Accent colors */
+    --accent: 210 10% 23%;
+    --accent-foreground: 210 20% 98%;
+    
+    /* Muted colors */
+    --muted: 210 10% 23%;
+    --muted-foreground: 210 11% 71%;
+    
+    /* Card colors */
+    --card: 210 15% 16%;
+    --card-foreground: 210 20% 98%;
+    
+    /* Popover colors */
+    --popover: 210 15% 16%;
+    --popover-foreground: 210 20% 98%;
+    
+    /* Border colors */
+    --border: 210 10% 23%;
+    --input: 210 10% 23%;
+    --ring: 340 100% 70%;
+    
+    /* State colors */
+    --destructive: 0 84% 54%;
+    --destructive-foreground: 210 20% 98%;
+    --success: 138 76% 35%;
+    --success-foreground: 210 20% 98%;
+    --warning: 48 96% 47%;
+    --warning-foreground: 45 90% 22%;
+    
+    /* Chart colors for analytics */
+    --chart-1: 340 100% 70%;
+    --chart-2: 270 95% 70%;
+    --chart-3: 45 90% 60%;
+    --chart-4: 138 76% 35%;
+    --chart-5: 48 96% 47%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Wedding-themed typography */
+  .font-wedding {
+    font-family: "Playfair Display", Georgia, serif;
+  }
+  
+  .font-elegant {
+    font-family: "Inter", system-ui, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.025em;
+  }
+}
+
+@layer components {
+  /* Wedding-themed component classes */
+  .card-wedding {
+    @apply bg-card border border-border rounded-lg shadow-md;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+  }
+  
+  .btn-wedding {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200;
+    @apply bg-primary text-primary-foreground hover:shadow-lg hover:-translate-y-0.5;
+    background: var(--wedding-gradient);
+    padding: 0.5rem 1rem;
+  }
+  
+  .btn-wedding-outline {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200;
+    @apply border border-primary text-primary hover:bg-primary hover:text-primary-foreground;
+    padding: 0.5rem 1rem;
+  }
+  
+  .text-gradient-wedding {
+    background: var(--wedding-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-romantic {
+    background: var(--romantic-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .bg-gradient-wedding {
+    background: var(--wedding-gradient);
+  }
+  
+  .bg-gradient-romantic {
+    background: var(--romantic-gradient);
+  }
+  
+  /* Form styling */
+  .form-input {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm;
+    @apply ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium;
+    @apply placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2;
+    @apply focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .form-label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+  
+  /* Wedding-specific components */
+  .wedding-hero {
+    background: radial-gradient(ellipse at center, hsl(var(--primary) / 0.1) 0%, transparent 70%),
+                linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+  }
+  
+  .supplier-card {
+    @apply bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card) / 0.8) 100%);
+  }
+  
+  .timeline-item {
+    @apply relative pl-6 pb-8 border-l-2 border-primary/20;
+  }
+  
+  .timeline-item:before {
+    content: '';
+    @apply absolute -left-2 top-0 w-4 h-4 bg-primary rounded-full;
+  }
+  
+  .guest-status-confirmed {
+    @apply bg-success/10 text-success border border-success/20 rounded-full px-2 py-1 text-xs font-medium;
+  }
+  
+  .guest-status-pending {
+    @apply bg-warning/10 text-warning border border-warning/20 rounded-full px-2 py-1 text-xs font-medium;
+  }
+  
+  .guest-status-declined {
+    @apply bg-destructive/10 text-destructive border border-destructive/20 rounded-full px-2 py-1 text-xs font-medium;
+  }
+}
+
+@layer utilities {
+  /* Wedding-themed utilities */
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  /* Responsive typography */
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+  
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl;
+  }
+  
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl;
+  }
+  
+  .text-responsive-2xl {
+    @apply text-2xl sm:text-3xl;
+  }
+  
+  /* Spacing utilities for wedding layouts */
+  .section-padding {
+    @apply py-12 sm:py-16 lg:py-20;
+  }
+  
+  .container-wedding {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}

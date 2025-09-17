@@ -1,0 +1,33 @@
+/* Import shared design system styles */
+@import '../../../packages/ui/src/styles/globals.css';
+
+/* WedSync-specific overrides and customizations */
+@layer components {
+  /* Supplier-focused styling */
+  .wedsync-nav {
+    @apply bg-wedsync-primary-500 text-white;
+  }
+  
+  .supplier-dashboard {
+    @apply bg-gradient-to-br from-wedsync-primary-50 to-background;
+  }
+  
+  .form-builder-canvas {
+    @apply bg-white border-2 border-dashed border-border rounded-lg p-8;
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.15) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+  
+  .journey-builder {
+    @apply bg-card border border-border rounded-lg overflow-hidden;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.3) 100%);
+  }
+  
+  .client-card {
+    @apply supplier-card hover:border-wedsync-primary-200 transition-colors;
+  }
+  
+  .engagement-metric {
+    @apply bg-white rounded-lg p-4 border border-border shadow-sm;
+  }
+}

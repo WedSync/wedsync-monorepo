@@ -1,0 +1,7 @@
+projectKey=wedsync-latest
+serverUrl=http://localhost:9000
+serverVersion=25.9.0.112764
+branch=
+dashboardUrl=http://localhost:9000/dashboard?id=wedsync-latest
+ceTaskId=4a100490-4ccc-4593-b3a4-4b3fab8c04a1
+ceTaskUrl=http://localhost:9000/api/ce/task?id=4a100490-4ccc-4593-b3a4-4b3fab8c04a1

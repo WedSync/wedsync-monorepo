@@ -1,0 +1,29 @@
+# Ignore all build artifacts
+.next/
+dist/
+build/
+out/
+
+# Ignore node_modules
+node_modules/
+
+# Ignore package lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore logs
+*.log
+
+# Ignore generated files
+.turbo/
+.vercel/
+
+# Ignore coverage reports
+coverage/
+
+# Ignore environment files
+.env*
+
+# Ignore public assets that shouldn't be formatted
+public/

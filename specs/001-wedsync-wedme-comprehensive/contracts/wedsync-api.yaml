@@ -1,0 +1,763 @@
+openapi: 3.0.3
+info:
+  title: WedSync Supplier Platform API
+  description: API for wedding suppliers to manage forms, journeys, and client relationships
+  version: 1.0.0
+  contact:
+    name: WedSync API Support
+    email: api@wedsync.com
+
+servers:
+  - url: https://api.wedsync.com/v1
+    description: Production server
+  - url: https://staging-api.wedsync.com/v1
+    description: Staging server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication
+  /auth/login:
+    post:
+      summary: Supplier login
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required: [email, password]
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+                  supplier:
+                    $ref: '#/components/schemas/Supplier'
+
+  # Dashboard
+  /dashboard/today:
+    get:
+      summary: Get today's wedding information
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: Today's wedding details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wedding:
+                    $ref: '#/components/schemas/Wedding'
+                  weather:
+                    $ref: '#/components/schemas/Weather'
+                  directions:
+                    $ref: '#/components/schemas/Directions'
+                  contacts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contact'
+
+  # Forms Management
+  /forms:
+    get:
+      summary: List supplier forms
+      tags: [Forms]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: wedding_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of forms
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  forms:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Form'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create new form
+      tags: [Forms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                wedding_id:
+                  type: string
+                  format: uuid
+                fields_schema:
+                  type: object
+                ai_prompt:
+                  type: string
+              required: [name, fields_schema]
+      responses:
+        '201':
+          description: Form created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Form'
+
+  /forms/{formId}:
+    get:
+      summary: Get form details
+      tags: [Forms]
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Form details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Form'
+
+    put:
+      summary: Update form
+      tags: [Forms]
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormUpdate'
+      responses:
+        '200':
+          description: Form updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Form'
+
+    delete:
+      summary: Delete form
+      tags: [Forms]
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Form deleted
+
+  /forms/{formId}/submissions:
+    get:
+      summary: Get form submissions
+      tags: [Forms]
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, submitted, reviewed, approved]
+      responses:
+        '200':
+          description: Form submissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FormSubmission'
+
+  # Journey Management
+  /journeys:
+    get:
+      summary: List supplier journeys
+      tags: [Journeys]
+      responses:
+        '200':
+          description: List of journeys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Journey'
+
+    post:
+      summary: Create new journey
+      tags: [Journeys]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                workflow_definition:
+                  type: object
+                trigger_conditions:
+                  type: object
+              required: [name, workflow_definition]
+      responses:
+        '201':
+          description: Journey created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Journey'
+
+  /journeys/{journeyId}/enroll:
+    post:
+      summary: Enroll wedding in journey
+      tags: [Journeys]
+      parameters:
+        - name: journeyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wedding_id:
+                  type: string
+                  format: uuid
+                custom_variables:
+                  type: object
+              required: [wedding_id]
+      responses:
+        '201':
+          description: Wedding enrolled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JourneyEnrollment'
+
+  # Client Management
+  /clients:
+    get:
+      summary: List clients (weddings)
+      tags: [Clients]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [planning, confirmed, completed, cancelled]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of client weddings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wedding'
+
+  /clients/{weddingId}/engagement:
+    get:
+      summary: Get client engagement metrics
+      tags: [Clients]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Engagement metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  engagement_score:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  activity_feed:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Activity'
+                  metrics:
+                    type: object
+
+  # Communication
+  /communications:
+    get:
+      summary: Get communication history
+      tags: [Communication]
+      parameters:
+        - name: wedding_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: message_type
+          in: query
+          schema:
+            type: string
+            enum: [email, sms, whatsapp, internal]
+      responses:
+        '200':
+          description: Communication history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Communication'
+
+    post:
+      summary: Send message
+      tags: [Communication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wedding_id:
+                  type: string
+                  format: uuid
+                recipient_id:
+                  type: string
+                  format: uuid
+                message_type:
+                  type: string
+                  enum: [email, sms, whatsapp, internal]
+                subject:
+                  type: string
+                content:
+                  type: string
+                scheduled_for:
+                  type: string
+                  format: date-time
+              required: [wedding_id, recipient_id, message_type, content]
+      responses:
+        '201':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Communication'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [supplier, couple, admin]
+        created_at:
+          type: string
+          format: date-time
+        last_login_at:
+          type: string
+          format: date-time
+
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        business_name:
+          type: string
+        specialization:
+          type: string
+          enum: [photographer, dj, florist, caterer, venue, planner, other]
+        description:
+          type: string
+        website:
+          type: string
+          format: uri
+        phone:
+          type: string
+        address:
+          type: object
+        pricing_tier:
+          type: string
+          enum: [free, starter, professional, scale, enterprise]
+        verification_status:
+          type: string
+          enum: [unverified, verified, premium]
+
+    Wedding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        wedding_date:
+          type: string
+          format: date
+        ceremony_venue:
+          $ref: '#/components/schemas/Venue'
+        reception_venue:
+          $ref: '#/components/schemas/Venue'
+        guest_count_estimated:
+          type: integer
+        guest_count_confirmed:
+          type: integer
+        budget_total:
+          type: number
+          format: decimal
+        theme:
+          type: string
+        status:
+          type: string
+          enum: [planning, confirmed, completed, cancelled]
+        core_details_complete:
+          type: boolean
+
+    Venue:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: object
+        contact_info:
+          type: object
+        capacity_max:
+          type: integer
+        restrictions:
+          type: object
+
+    Form:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        supplier_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        fields_schema:
+          type: object
+        conditional_logic:
+          type: object
+        is_active:
+          type: boolean
+        submission_count:
+          type: integer
+        completion_rate:
+          type: number
+        ai_generated:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    FormUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        fields_schema:
+          type: object
+        conditional_logic:
+          type: object
+        is_active:
+          type: boolean
+
+    FormSubmission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        form_id:
+          type: string
+          format: uuid
+        wedding_id:
+          type: string
+          format: uuid
+        responses:
+          type: object
+        status:
+          type: string
+          enum: [draft, submitted, reviewed, approved]
+        submitted_at:
+          type: string
+          format: date-time
+        time_to_complete:
+          type: integer
+
+    Journey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        supplier_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        workflow_definition:
+          type: object
+        is_active:
+          type: boolean
+        enrollment_count:
+          type: integer
+        completion_rate:
+          type: number
+
+    JourneyEnrollment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        journey_id:
+          type: string
+          format: uuid
+        wedding_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, completed, paused, cancelled]
+        enrolled_at:
+          type: string
+          format: date-time
+        current_node:
+          type: string
+
+    Communication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        wedding_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        recipient_id:
+          type: string
+          format: uuid
+        message_type:
+          type: string
+          enum: [email, sms, whatsapp, internal]
+        subject:
+          type: string
+        content:
+          type: string
+        status:
+          type: string
+          enum: [draft, sent, delivered, read, failed]
+        sent_at:
+          type: string
+          format: date-time
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/User'
+
+    Weather:
+      type: object
+      properties:
+        temperature:
+          type: number
+        condition:
+          type: string
+        precipitation:
+          type: number
+        wind_speed:
+          type: number
+
+    Directions:
+      type: object
+      properties:
+        distance:
+          type: string
+        duration:
+          type: string
+        route_url:
+          type: string
+          format: uri
+
+    Contact:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

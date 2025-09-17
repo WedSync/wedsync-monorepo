@@ -1,0 +1,1057 @@
+openapi: 3.0.3
+info:
+  title: WedMe Couple Platform API
+  description: API for couples to manage their wedding planning
+  version: 1.0.0
+  contact:
+    name: WedMe API Support
+    email: api@wedme.app
+
+servers:
+  - url: https://api.wedme.app/v1
+    description: Production server
+  - url: https://staging-api.wedme.app/v1
+    description: Staging server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication
+  /auth/login:
+    post:
+      summary: Couple login
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required: [email, password]
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+                  weddings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Wedding'
+
+  # Wedding Management
+  /weddings:
+    get:
+      summary: Get user's weddings
+      tags: [Weddings]
+      responses:
+        '200':
+          description: List of weddings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wedding'
+
+    post:
+      summary: Create new wedding
+      tags: [Weddings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                wedding_date:
+                  type: string
+                  format: date
+                ceremony_venue:
+                  $ref: '#/components/schemas/VenueInput'
+                reception_venue:
+                  $ref: '#/components/schemas/VenueInput'
+                guest_count_estimated:
+                  type: integer
+                theme:
+                  type: string
+              required: [title, wedding_date]
+      responses:
+        '201':
+          description: Wedding created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wedding'
+
+  /weddings/{weddingId}:
+    get:
+      summary: Get wedding details
+      tags: [Weddings]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Wedding details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeddingDetailed'
+
+    put:
+      summary: Update wedding details
+      tags: [Weddings]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeddingUpdate'
+      responses:
+        '200':
+          description: Wedding updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wedding'
+
+  /weddings/{weddingId}/core-details:
+    put:
+      summary: Update core wedding details
+      tags: [Weddings]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wedding_date:
+                  type: string
+                  format: date
+                ceremony_venue:
+                  $ref: '#/components/schemas/VenueInput'
+                reception_venue:
+                  $ref: '#/components/schemas/VenueInput'
+                guest_count_estimated:
+                  type: integer
+                theme:
+                  type: string
+                special_requirements:
+                  type: string
+      responses:
+        '200':
+          description: Core details updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wedding'
+
+  # Guest Management
+  /weddings/{weddingId}/guests:
+    get:
+      summary: Get wedding guest list
+      tags: [Guests]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rsvp_status
+          in: query
+          schema:
+            type: string
+            enum: [pending, attending, not_attending, maybe]
+      responses:
+        '200':
+          description: Guest list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Guest'
+
+    post:
+      summary: Add guest to wedding
+      tags: [Guests]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                relationship:
+                  type: string
+                plus_one_allowed:
+                  type: boolean
+                dietary_requirements:
+                  type: object
+                is_helper:
+                  type: boolean
+                helper_role:
+                  type: string
+              required: [first_name, last_name]
+      responses:
+        '201':
+          description: Guest added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+
+    put:
+      summary: Bulk import guests
+      tags: [Guests]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guests:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      first_name:
+                        type: string
+                      last_name:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                      relationship:
+                        type: string
+                      plus_one_allowed:
+                        type: boolean
+      responses:
+        '200':
+          description: Guests imported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported_count:
+                    type: integer
+                  failed_count:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+
+  /weddings/{weddingId}/guests/{guestId}:
+    put:
+      summary: Update guest details
+      tags: [Guests]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: guestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestUpdate'
+      responses:
+        '200':
+          description: Guest updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+
+  /weddings/{weddingId}/guests/{guestId}/rsvp:
+    post:
+      summary: Record guest RSVP
+      tags: [Guests]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: guestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rsvp_status:
+                  type: string
+                  enum: [attending, not_attending, maybe]
+                plus_one_name:
+                  type: string
+                dietary_requirements:
+                  type: object
+                special_notes:
+                  type: string
+              required: [rsvp_status]
+      responses:
+        '200':
+          description: RSVP recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+
+  # Task Management
+  /weddings/{weddingId}/tasks:
+    get:
+      summary: Get wedding tasks
+      tags: [Tasks]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, cancelled]
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Wedding tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+
+    post:
+      summary: Create new task
+      tags: [Tasks]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                category:
+                  type: string
+                due_date:
+                  type: string
+                  format: date
+                assignee_guest_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                is_day_of_task:
+                  type: boolean
+              required: [title]
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /weddings/{weddingId}/tasks/{taskId}:
+    put:
+      summary: Update task
+      tags: [Tasks]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  # Timeline Management
+  /weddings/{weddingId}/timeline:
+    get:
+      summary: Get wedding timeline
+      tags: [Timeline]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Wedding timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timeline:
+                    type: object
+                  supplier_schedules:
+                    type: array
+                    items:
+                      type: object
+
+    put:
+      summary: Update wedding timeline
+      tags: [Timeline]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timeline:
+                  type: object
+                notify_suppliers:
+                  type: boolean
+                  default: true
+              required: [timeline]
+      responses:
+        '200':
+          description: Timeline updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timeline:
+                    type: object
+                  updated_suppliers:
+                    type: array
+                    items:
+                      type: string
+
+  # Supplier Collaboration
+  /weddings/{weddingId}/suppliers:
+    get:
+      summary: Get wedding suppliers
+      tags: [Suppliers]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Wedding suppliers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WeddingSupplier'
+
+    post:
+      summary: Invite supplier to wedding
+      tags: [Suppliers]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                supplier_email:
+                  type: string
+                  format: email
+                service_type:
+                  type: string
+                message:
+                  type: string
+              required: [supplier_email, service_type]
+      responses:
+        '201':
+          description: Supplier invitation sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invitation_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+
+  /weddings/{weddingId}/forms:
+    get:
+      summary: Get supplier forms for wedding
+      tags: [Forms]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: supplier_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Supplier forms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    form:
+                      $ref: '#/components/schemas/Form'
+                    submission:
+                      $ref: '#/components/schemas/FormSubmission'
+                    supplier:
+                      $ref: '#/components/schemas/Supplier'
+
+  /weddings/{weddingId}/forms/{formId}/submit:
+    post:
+      summary: Submit form response
+      tags: [Forms]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: formId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                responses:
+                  type: object
+                status:
+                  type: string
+                  enum: [draft, submitted]
+                  default: submitted
+              required: [responses]
+      responses:
+        '201':
+          description: Form submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormSubmission'
+
+  # Budget Management
+  /weddings/{weddingId}/budget:
+    get:
+      summary: Get wedding budget
+      tags: [Budget]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Wedding budget
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_budget:
+                    type: number
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        budgeted:
+                          type: number
+                        actual:
+                          type: number
+                        transactions:
+                          type: array
+
+    put:
+      summary: Update wedding budget
+      tags: [Budget]
+      parameters:
+        - name: weddingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                total_budget:
+                  type: number
+                categories:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Budget updated
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [couple]
+        created_at:
+          type: string
+          format: date-time
+
+    Wedding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        wedding_date:
+          type: string
+          format: date
+        ceremony_venue:
+          $ref: '#/components/schemas/Venue'
+        reception_venue:
+          $ref: '#/components/schemas/Venue'
+        guest_count_estimated:
+          type: integer
+        guest_count_confirmed:
+          type: integer
+        budget_total:
+          type: number
+        theme:
+          type: string
+        status:
+          type: string
+          enum: [planning, confirmed, completed, cancelled]
+        core_details_complete:
+          type: boolean
+
+    WeddingDetailed:
+      allOf:
+        - $ref: '#/components/schemas/Wedding'
+        - type: object
+          properties:
+            timeline:
+              type: object
+            suppliers:
+              type: array
+              items:
+                $ref: '#/components/schemas/WeddingSupplier'
+            guest_summary:
+              type: object
+              properties:
+                total_guests:
+                  type: integer
+                rsvp_pending:
+                  type: integer
+                attending:
+                  type: integer
+                not_attending:
+                  type: integer
+
+    WeddingUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        wedding_date:
+          type: string
+          format: date
+        guest_count_estimated:
+          type: integer
+        budget_total:
+          type: number
+        theme:
+          type: string
+        special_requirements:
+          type: string
+
+    Guest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        relationship:
+          type: string
+        rsvp_status:
+          type: string
+          enum: [pending, attending, not_attending, maybe]
+        rsvp_responded_at:
+          type: string
+          format: date-time
+        dietary_requirements:
+          type: object
+        plus_one_allowed:
+          type: boolean
+        plus_one_name:
+          type: string
+        photo_groups:
+          type: array
+          items:
+            type: string
+        is_helper:
+          type: boolean
+        helper_role:
+          type: string
+
+    GuestUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        relationship:
+          type: string
+        plus_one_allowed:
+          type: boolean
+        dietary_requirements:
+          type: object
+        photo_groups:
+          type: array
+          items:
+            type: string
+        is_helper:
+          type: boolean
+        helper_role:
+          type: string
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        category:
+          type: string
+        due_date:
+          type: string
+          format: date
+        assignees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Guest'
+        is_day_of_task:
+          type: boolean
+        completed_at:
+          type: string
+          format: date-time
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        due_date:
+          type: string
+          format: date
+        completion_notes:
+          type: string
+
+    Venue:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: object
+        contact_info:
+          type: object
+        capacity_max:
+          type: integer
+
+    VenueInput:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: object
+        contact_info:
+          type: object
+        capacity_max:
+          type: integer
+
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        business_name:
+          type: string
+        specialization:
+          type: string
+        description:
+          type: string
+        website:
+          type: string
+        verification_status:
+          type: string
+
+    WeddingSupplier:
+      type: object
+      properties:
+        supplier:
+          $ref: '#/components/schemas/Supplier'
+        service_type:
+          type: string
+        contract_status:
+          type: string
+          enum: [inquiry, proposal, contracted, completed]
+        booking_confirmed_at:
+          type: string
+          format: date-time
+        timeline_items:
+          type: object
+
+    Form:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        fields_schema:
+          type: object
+        supplier:
+          $ref: '#/components/schemas/Supplier'
+
+    FormSubmission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        form_id:
+          type: string
+          format: uuid
+        responses:
+          type: object
+        status:
+          type: string
+          enum: [draft, submitted, reviewed, approved]
+        submitted_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

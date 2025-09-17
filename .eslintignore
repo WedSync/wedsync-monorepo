@@ -1,0 +1,26 @@
+# Build outputs
+.next/
+dist/
+build/
+out/
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env*
+
+# Generated files
+.turbo/
+.vercel/
+
+# Logs
+*.log
+
+# Coverage reports
+coverage/
+
+# Package lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

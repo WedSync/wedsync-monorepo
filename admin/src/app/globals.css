@@ -1,0 +1,66 @@
+/* Import shared design system styles */
+@import '../../../packages/ui/src/styles/globals.css';
+
+/* Admin-specific overrides and customizations */
+@layer components {
+  /* Professional admin styling */
+  .admin-nav {
+    @apply bg-admin-primary-500 text-white border-b border-admin-primary-600;
+  }
+  
+  .admin-sidebar {
+    @apply bg-admin-primary-50 border-r border-border;
+  }
+  
+  .dashboard-card {
+    @apply bg-white rounded-lg p-6 border border-border shadow-sm;
+  }
+  
+  .metric-card {
+    @apply dashboard-card hover:shadow-md transition-shadow;
+  }
+  
+  .metric-positive {
+    @apply text-dashboard-success;
+  }
+  
+  .metric-negative {
+    @apply text-dashboard-danger;
+  }
+  
+  .metric-neutral {
+    @apply text-dashboard-info;
+  }
+  
+  .admin-table {
+    @apply w-full border-collapse bg-white rounded-lg overflow-hidden border border-border;
+  }
+  
+  .admin-table th {
+    @apply bg-admin-primary-50 text-admin-primary-900 font-medium text-left p-4 border-b border-border;
+  }
+  
+  .admin-table td {
+    @apply p-4 border-b border-border;
+  }
+  
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .status-active {
+    @apply status-badge bg-dashboard-success/10 text-dashboard-success;
+  }
+  
+  .status-inactive {
+    @apply status-badge bg-neutral-100 text-neutral-600;
+  }
+  
+  .status-warning {
+    @apply status-badge bg-dashboard-warning/10 text-dashboard-warning;
+  }
+  
+  .analytics-chart {
+    @apply bg-white rounded-lg p-6 border border-border;
+  }
+}

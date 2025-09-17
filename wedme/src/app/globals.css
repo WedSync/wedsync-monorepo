@@ -1,0 +1,47 @@
+/* Import shared design system styles */
+@import '../../../packages/ui/src/styles/globals.css';
+
+/* WedMe-specific overrides and customizations */
+@layer components {
+  /* Couple-focused romantic styling */
+  .wedme-nav {
+    @apply bg-gradient-to-r from-wedme-primary-500 to-romantic-500 text-white;
+  }
+  
+  .wedding-dashboard {
+    @apply bg-gradient-to-br from-romantic-50 via-background to-wedme-primary-50;
+  }
+  
+  .wedding-header {
+    @apply font-wedding text-gradient-romantic text-center py-8;
+  }
+  
+  .couple-card {
+    @apply card-wedding border-romantic-200 hover:shadow-lg transition-all duration-300;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, var(--romantic-gradient) 100%);
+  }
+  
+  .guest-list {
+    @apply bg-white rounded-lg border border-romantic-200 overflow-hidden;
+  }
+  
+  .timeline-romantic {
+    @apply timeline-item border-l-romantic-500;
+  }
+  
+  .timeline-romantic:before {
+    @apply bg-romantic-500;
+  }
+  
+  .rsvp-form {
+    @apply bg-gradient-to-br from-romantic-50 to-white p-6 rounded-lg border border-romantic-200;
+  }
+  
+  .task-card {
+    @apply bg-white rounded-lg p-4 border border-border shadow-sm hover:shadow-md transition-shadow;
+  }
+  
+  .wedding-countdown {
+    @apply text-center p-8 bg-gradient-wedding rounded-lg text-white;
+  }
+}
