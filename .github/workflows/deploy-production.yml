@@ -1,0 +1,240 @@
+name: 🌟 Deploy Production
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8.6.12'
+
+jobs:
+  pre-deployment-checks:
+    name: 🛡️ Pre-deployment Security & Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run quality checks
+        run: pnpm quality
+
+      - name: Security audit
+        run: pnpm audit --audit-level critical
+
+      - name: Check for hardcoded secrets
+        run: |
+          if grep -r "sk_test_" --exclude-dir=node_modules --exclude-dir=.git . || \
+             grep -r "pk_test_" --exclude-dir=node_modules --exclude-dir=.git . || \
+             grep -r "AKIA[0-9A-Z]{16}" --exclude-dir=node_modules --exclude-dir=.git . || \
+             grep -r "AIza[0-9A-Za-z\\-_]{35}" --exclude-dir=node_modules --exclude-dir=.git .; then
+            echo "❌ Hardcoded secrets detected! Blocking deployment."
+            exit 1
+          else
+            echo "✅ No hardcoded secrets found"
+          fi
+
+  deploy-wedsync-production:
+    name: 🚀 Deploy WedSync Production
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment:
+      name: wedsync-production
+      url: https://app.wedsync.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build WedSync
+        run: pnpm build --filter=wedsync
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Deploy to Vercel (Production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_WEDSYNC_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./wedsync
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ WedSync deployed successfully to production"
+
+  deploy-wedme-production:
+    name: 🚀 Deploy WedMe Production
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment:
+      name: wedme-production
+      url: https://wedme.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build WedMe
+        run: pnpm build --filter=wedme
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Deploy to Vercel (Production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_WEDME_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./wedme
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ WedMe deployed successfully to production"
+
+  deploy-admin-production:
+    name: 🚀 Deploy Admin Production
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment:
+      name: admin-production
+      url: https://admin.wedsync.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Admin
+        run: pnpm build --filter=admin
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Deploy to Vercel (Production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./admin
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Admin deployed successfully to production"
+
+  post-deployment:
+    name: 📊 Post-deployment Monitoring
+    runs-on: ubuntu-latest
+    needs: [deploy-wedsync-production, deploy-wedme-production, deploy-admin-production]
+    if: always()
+    steps:
+      - name: Run Lighthouse Performance Audit
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            https://app.wedsync.com
+            https://wedme.com
+            https://admin.wedsync.com
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Health Check All Services
+        run: |
+          echo "🔍 Running health checks..."
+
+          services=(
+            "https://app.wedsync.com"
+            "https://wedme.com"
+            "https://admin.wedsync.com"
+          )
+
+          for service in "${services[@]}"; do
+            echo "Checking $service..."
+            if curl -f -s --max-time 30 "$service" > /dev/null; then
+              echo "✅ $service is healthy"
+            else
+              echo "❌ $service health check failed"
+              exit 1
+            fi
+          done
+
+      - name: Notify team of deployment
+        if: success()
+        run: |
+          echo "🎉 All services deployed successfully!"
+          echo "WedSync: https://app.wedsync.com"
+          echo "WedMe: https://wedme.com"
+          echo "Admin: https://admin.wedsync.com"
+
+  rollback:
+    name: 🔄 Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy-wedsync-production, deploy-wedme-production, deploy-admin-production, post-deployment]
+    if: failure()
+    steps:
+      - name: Trigger rollback
+        run: |
+          echo "❌ Deployment failed, initiating rollback procedures"
+          echo "Manual intervention may be required"
+          # Add rollback logic here if needed

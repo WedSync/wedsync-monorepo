@@ -1,0 +1,205 @@
+name: 🏷️ Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (semver)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8.6.12'
+
+jobs:
+  release:
+    name: 🚀 Create Release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run quality checks
+        run: pnpm quality
+
+      - name: Get version increment
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "increment=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            # Auto-detect version increment based on commit messages
+            if git log --format=%B -n 1 ${{ github.sha }} | grep -q "BREAKING CHANGE\|!:"; then
+              echo "increment=major" >> $GITHUB_OUTPUT
+            elif git log --format=%B -n 1 ${{ github.sha }} | grep -q "^feat"; then
+              echo "increment=minor" >> $GITHUB_OUTPUT
+            else
+              echo "increment=patch" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Get current version
+        id: current_version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          current="${{ steps.current_version.outputs.version }}"
+          increment="${{ steps.version.outputs.increment }}"
+
+          IFS='.' read -ra VERSION_PARTS <<< "$current"
+          major=${VERSION_PARTS[0]}
+          minor=${VERSION_PARTS[1]}
+          patch=${VERSION_PARTS[2]}
+
+          case $increment in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          new_version="$major.$minor.$patch"
+          echo "version=$new_version" >> $GITHUB_OUTPUT
+
+      - name: Update package versions
+        run: |
+          new_version="${{ steps.new_version.outputs.version }}"
+          echo "🏷️  Updating to version $new_version"
+
+          # Update root package.json
+          npm version $new_version --no-git-tag-version
+
+          # Update workspace package versions
+          pnpm --recursive exec -- npm version $new_version --no-git-tag-version
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "📝 Generating changelog..."
+
+          # Get commits since last release
+          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")
+
+          echo "## What's Changed" > changelog.md
+          echo "" >> changelog.md
+
+          # Features
+          if git log $last_tag..HEAD --oneline --grep="^feat" --format="* %s" | head -20; then
+            echo "### 🚀 Features" >> changelog.md
+            git log $last_tag..HEAD --oneline --grep="^feat" --format="* %s" | head -20 >> changelog.md
+            echo "" >> changelog.md
+          fi
+
+          # Bug fixes
+          if git log $last_tag..HEAD --oneline --grep="^fix" --format="* %s" | head -20; then
+            echo "### 🐛 Bug Fixes" >> changelog.md
+            git log $last_tag..HEAD --oneline --grep="^fix" --format="* %s" | head -20 >> changelog.md
+            echo "" >> changelog.md
+          fi
+
+          # Improvements
+          if git log $last_tag..HEAD --oneline --grep="^perf\|^refactor\|^style" --format="* %s" | head -10; then
+            echo "### 💡 Improvements" >> changelog.md
+            git log $last_tag..HEAD --oneline --grep="^perf\|^refactor\|^style" --format="* %s" | head -10 >> changelog.md
+            echo "" >> changelog.md
+          fi
+
+          # Dependencies
+          if git log $last_tag..HEAD --oneline --grep="^chore.*deps\|^chore.*dependencies\|^build.*deps" --format="* %s" | head -5; then
+            echo "### 📦 Dependencies" >> changelog.md
+            git log $last_tag..HEAD --oneline --grep="^chore.*deps\|^chore.*dependencies\|^build.*deps" --format="* %s" | head -5 >> changelog.md
+            echo "" >> changelog.md
+          fi
+
+          echo "---" >> changelog.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$last_tag...v${{ steps.new_version.outputs.version }}" >> changelog.md
+
+          # Set output for release notes
+          changelog_content=$(cat changelog.md)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog_content" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Commit version updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json */package.json
+          git commit -m "chore: release v${{ steps.new_version.outputs.version }}"
+          git tag "v${{ steps.new_version.outputs.version }}"
+
+      - name: Push changes
+        run: |
+          git push origin main
+          git push origin "v${{ steps.new_version.outputs.version }}"
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ steps.new_version.outputs.version }}"
+          release_name: "Release v${{ steps.new_version.outputs.version }}"
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Publish to npm (if configured)
+        if: env.NPM_TOKEN != null
+        run: |
+          echo "📦 Publishing packages to npm..."
+          pnpm publish --recursive --access public --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create deployment notification
+        run: |
+          echo "🎉 Release v${{ steps.new_version.outputs.version }} created successfully!"
+          echo "The production deployment workflow will be triggered automatically."
